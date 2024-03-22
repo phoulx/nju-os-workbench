@@ -10,8 +10,9 @@ CFLAGS += -O1 -std=gnu11 -ggdb -Wall -Werror -Wno-unused-result -Wno-unused-valu
 
 .PHONY: all git test clean commit-and-make
 
-.DEFAULT_GOAL := commit-and-make
+.DEFAULT_GOAL := make-only
 commit-and-make: git all
+make-only: all
 
 $(NAME)-64: $(DEPS) # 64bit binary
 	gcc -m64 $(CFLAGS) $(SRCS) -o $@ $(LDFLAGS)
