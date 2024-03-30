@@ -5,3 +5,4 @@
 !*.c
 !*.h
 .shadow
+!README.md
