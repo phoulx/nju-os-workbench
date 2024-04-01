@@ -1,4 +1,4 @@
-import os, sys, pathlib, subprocess
+import os, sys, pathlib, subprocess  # noqa: E401
 
 f = pathlib.Path(sys.argv[1])
 try:

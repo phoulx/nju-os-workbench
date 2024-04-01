@@ -1,4 +1,4 @@
-# LAB-M1
+# LAB - M1
 https://jyywiki.cn/OS/2024/labs/M1.md  
 本来以为很简单，结果在借助Copilot的情况还断断续续花了好几天。
 
