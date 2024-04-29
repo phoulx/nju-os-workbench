@@ -43,7 +43,7 @@ co_wait：
 
 ## 其他解答
 网上公开的解答都不够好，比如：
-- [知乎这个](https://zhuanlan.zhihu.com/p/490475991)，没搞明白CO_WAITING是啥，恢复堆栈的操作也十分冗余
+- [知乎这个](https://zhuanlan.zhihu.com/p/490475991)，他没搞明白CO_WAITING是啥，恢复堆栈的操作也十分冗余
 - [littlesun](https://littlesun.cloud/2023/07/30/协程库-libco/)，跟知乎学的
 - [jiaweihawk](https://jiaweihawk.gitee.io/2021/08/06/操作系统-设计与实现-三/)，也是很冗长，还有不明所以的递归
 
@@ -51,7 +51,7 @@ co_wait：
 - [vgalaxy](https://vgalaxy.work/posts/os-mini-lab/)
 - [noicdi](https://www.noicdi.com/posts/5e8e42b3.html)
 
-通过搜索（可以[挑一个特别的函数名如`stack_switch_call`并指定文件路径搜索](https://github.com/search?q=stack_switch_call+path%3Aco.c&type=code)），发现Github上有一些很好的实现，值得参考（随便挑一个搞明白就差不多了）：
+通过搜索（可以[挑一个特别的函数名如`stack_switch_call`并指定文件路径搜索](https://github.com/search?q=stack_switch_call+path%3Aco.c&type=code)），发现Github上有一些不错的实现，值得参考（但既然你找到了这里，直接看我的就行了）：
 - https://github.com/cpyhal3515/os_learning/tree/main/os_m_code/M2_libco
 - https://github.com/SToPire/os-workbench/tree/master/libco
 - https://github.com/iamxym/os-workbench/tree/master/libco

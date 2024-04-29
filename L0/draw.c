@@ -3,7 +3,7 @@
 #include <klib-macros.h>
 
 extern int image_width, image_height;
-extern uintptr_t image_data[];
+extern unsigned int image_data[];
 
 int main() {
     printf("Hello, OS World!\n");

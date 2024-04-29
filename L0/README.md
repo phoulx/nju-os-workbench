@@ -26,3 +26,10 @@ https://jyywiki.cn/OS/2024/labs/L0.md
 ## 遗留问题
 目前只能跑在默认的x86-qemu (32-bit) ，尝试改成64位没有成功。  
 在debug-bootloader（打印hello）试了64位也不行，所以估计要改AM框架才能兼容。
+
+经排查，问题在于`abstract-machine/am/src/x86/qemu/boot/bootblock.o`  
+发现gcc不同版本编译结果不一致，>=12编译出来的结果文件无法在x86_64启动  
+讨论见：https://github.com/NJU-ProjectN/os-workbench-2022/issues/3  
+解决办法（二选一）：  
+- 使用gcc-11（仅改`abstract-machine/am/src/x86/qemu/boot/Makefile`即可）
+- gcc版本>=12添加编译参数`-fno-strict-aliasing`

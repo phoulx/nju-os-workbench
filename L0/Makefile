@@ -1,7 +1,7 @@
 NAME := draw
 SRCS := draw.c bluey.c
-# export ARCH := x86_64-qemu
-export ARCH := x86-qemu
+export ARCH := x86_64-qemu
+# export ARCH := x86-qemu
 
 include $(AM_HOME)/Makefile
 
