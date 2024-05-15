@@ -3,3 +3,8 @@ build/
 .shadow/
 lectures/
 tmp/
+gpt*.bin
+venv/
+*-32
+*-64
+*.data

@@ -10,5 +10,10 @@ https://jyywiki.cn/OS/2024/
 但会力求写得简洁易读……
 
 
+make相关  
+默认配置在每次make时都会commit，可自行修改Makefile，以避免过多commit记录  
+另外编译32位需安装`gcc-multilib` 
+
+
 TG讨论群（非官方）：
 https://t.me/nju_os

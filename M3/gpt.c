@@ -83,6 +83,93 @@ void layernorm_forward(float* out, float* mean, float* rstd,
     }
 }
 
+#define BUFFER_SIZE 10
+#define THREAD_NUM 4
+
+typedef struct {
+    float* out_bt;
+    float* inp_bt;
+    float* weight;
+    float* bias;
+    int C;
+    int OC;
+} calc_args;
+
+// 环形缓冲区
+calc_args buffer[BUFFER_SIZE];
+int head = 0;
+int tail = 0;
+int buf_count = 0; // 表示当前缓冲区中的元素个数
+
+// 引入remaining计数器，为了保证`matmul_forward`函数退出时，结果已经全部计算完毕
+int remaining = 0; // 单次调用`matmul_forward`时未消费的计数，
+
+int finished = 0; // 结束所有线程的标志
+
+mutex_t lk = MUTEX_INIT();
+cond_t cv = COND_INIT();
+
+void buffer_push(calc_args args) {
+    buffer[tail] = args;
+    tail = (tail + 1) % BUFFER_SIZE;
+    buf_count++;
+}
+
+void buffer_pop(calc_args* args) {
+    *args = buffer[head];
+    head = (head + 1) % BUFFER_SIZE;
+    buf_count--;
+}
+
+// 摘取自原`matmul_forward`函数的核心计算逻辑，通过指针修改out_bt（即out）的值
+void calc(calc_args args) {
+    float* out_bt = args.out_bt;
+    float* inp_bt = args.inp_bt;
+    float* weight = args.weight;
+    float* bias = args.bias;
+    int C = args.C;
+    int OC = args.OC;
+
+    for (int o = 0; o < OC; o++) {
+        float val = (bias != NULL) ? bias[o] : 0.0f;
+        float* wrow = weight + o*C;
+        for (int i = 0; i < C; i++) {
+            val += inp_bt[i] * wrow[i];
+        }
+        out_bt[o] = val;
+    }
+}
+
+void worker(int id) {
+    calc_args args;
+    while (1) {
+        mutex_lock(&lk);
+        while (buf_count == 0 && !finished) {
+            cond_wait(&cv, &lk);
+        }
+        if (finished) { //主线程已执行完毕（全部生产完，并且消费完），子线程就可以退出了
+            assert(buf_count == 0);
+            assert(remaining == 0);
+            mutex_unlock(&lk);
+            break;
+        }
+
+        buffer_pop(&args);
+        cond_broadcast(&cv);
+        mutex_unlock(&lk);
+
+        // 释放锁再计算
+        calc(args);
+
+        mutex_lock(&lk);
+        remaining--;
+        cond_broadcast(&cv);
+        // 这里只会有一个线程执行到这里时remaining刚好为0，所以不能在此时判断break（其他线程仍然会继续循环）
+        // 并且如果remaining==0，那buf_count也一定为0，直接到下一次循环的开头再等待即可
+        mutex_unlock(&lk);
+    }
+}
+
 void matmul_forward(float* out,
                     float* inp, float* weight, float* bias,
                     int B, int T, int C, int OC) {
@@ -90,20 +177,30 @@ void matmul_forward(float* out,
     // OC is short for "output channels"
     // inp is (B,T,C), weight is (OC, C), bias is (OC)
     // out will be (B,T,OC)
+    assert(remaining == 0);
     for (int b = 0; b < B; b++) {
         for (int t = 0; t < T; t++) {
             float* out_bt = out + b * T * OC + t * OC;
             float* inp_bt = inp + b * T * C + t * C;
-            for (int o = 0; o < OC; o++) {
-                float val = (bias != NULL) ? bias[o] : 0.0f;
-                float* wrow = weight + o*C;
-                for (int i = 0; i < C; i++) {
-                    val += inp_bt[i] * wrow[i];
-                }
-                out_bt[o] = val;
+            calc_args args = {out_bt, inp_bt, weight, bias, C, OC};
+
+            mutex_lock(&lk);
+            remaining++;
+            while (buf_count == BUFFER_SIZE) {
+                cond_wait(&cv, &lk);
             }
+            buffer_push(args);
+
+            cond_broadcast(&cv);
+            mutex_unlock(&lk);
         }
     }
+
+    mutex_lock(&lk);
+    while (remaining > 0) {
+        cond_wait(&cv, &lk);
+    }
+    mutex_unlock(&lk);
 }
 
 void attention_forward(float* out, float* preatt, float* att,
@@ -565,7 +662,7 @@ int sample_mult(float* probabilities, int n) {
 int main(int argc, char** argv) {
     GPT2 model;
     gpt2_build_from_checkpoint(&model, "gpt2_124M.bin");
-    const int n = 10;  // Token limit.
+    const int n = 20;  // Token limit.
 
     if (argc == 1) {
         printf("Provide at least one token.\n");
@@ -586,6 +683,10 @@ int main(int argc, char** argv) {
         }
     }
 
+    for (int i = 0; i < THREAD_NUM; i++) {
+        create(worker);
+    }
+
     for (int t = argc - 1; t < n; t++) {
         gpt2_forward(&model, tokens, 1, t);
         float* probs = model.acts.probs + (t-1) * model.config.vocab_size;
@@ -595,6 +696,13 @@ int main(int argc, char** argv) {
         printf("%d\n", tokens[t]);
         fflush(stdout);
     }
+
+    mutex_lock(&lk);
+    finished = 1;
+    cond_broadcast(&cv);
+    mutex_unlock(&lk);
+
+    join();
 
     gpt2_free(&model);
 
