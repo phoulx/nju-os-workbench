@@ -1,4 +1,4 @@
-# LAB - M2
+# LAB - M3
 https://jyywiki.cn/OS/2024/labs/M3.md  
 
 ## 思路
