@@ -6,16 +6,17 @@ https://jyywiki.cn/OS/2024/labs/M3.md
 分析代码，基本是py子进程执行`gpt-64`并获取结果  
 
 ### 性能分析
-使用perf分析性能瓶颈：
-`perf record -g -- python3 complete.py` 
-如果报错，可能要改perf_event_paranoid
-`echo 1 | sudo tee /proc/sys/kernel/perf_event_paranoid`
+使用perf分析性能瓶颈：  
+`perf record -g -- python3 complete.py`   
+如果报错，可能要改perf_event_paranoid  
+`echo 1 | sudo tee /proc/sys/kernel/perf_event_paranoid`  
 
-查看分析结果：
-`perf report`
+`perf report`查看分析结果：  
 发现主要是`matmul_forward`函数占用大部分：  
+```
   Children      Self  Comman  Symbol
 +   96.03%    95.32%  gpt-64  [.] matmul_forward
+```
 所以主要工作就是对该函数的并行优化
 
 ### 并行优化

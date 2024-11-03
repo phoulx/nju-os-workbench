@@ -32,6 +32,7 @@ Info* write_to_file(char *line) {
     strcpy(res->wrapper_func, "");
     sprintf(res->cfile, "/tmp/crepl_%02d.c", res->sequence);
 
+    // 按照是否以「int 」开头判断是函数还是表达式
     if (strncmp(line, "int ", 4) != 0) {
         // 表达式，包装为函数，且需返回函数名以便调用
         sprintf(res->wrapper_func, "_wrapper%02d", res->sequence);
