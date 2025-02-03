@@ -110,6 +110,7 @@ int output(SyscallStats* stats, bool is_end)
 
 void child_process(int pfd[], int argc, char* argv[])
 {
+    // 其实没必要用memfd，因为pipe的FD直接对应在/proc/self/fd下
     int memfd = memfd_create("strace_output", MFD_CLOEXEC);
     assert(memfd != -1);
     char memfd_path[64];

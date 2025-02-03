@@ -1,4 +1,4 @@
-NAME := $(shell basename $(PWD))
+NAME := fsrecov
 export MODULE := M6
 all: $(NAME)-64 $(NAME)-32
 LDFLAGS += -lm
