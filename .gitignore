@@ -9,3 +9,4 @@ venv/
 *-64
 *.data
 tmp/
+.DS_Store
